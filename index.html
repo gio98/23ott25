@@ -13,6 +13,10 @@
   <audio id="page-open-sound" preload="auto">
     <source src="https://assets.mixkit.co/active_storage/sfx/2/2-preview.mp3" type="audio/mpeg">
   </audio>
+  <!-- Musica di sottofondo -->
+  <audio id="background-music" src="romantic.mp3" preload="auto" loop>
+    Il tuo browser non supporta l'elemento audio.
+  </audio>
   <style>
     body {
       margin: 0;
@@ -20,6 +24,48 @@
       overflow: hidden;
       font-family: 'Great Vibes', cursive;
       background-color: #000;
+    }
+    
+    /* Stili per la schermata iniziale */
+    .welcome-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background-color: rgba(0, 0, 0, 0.9);
+      z-index: 1000;
+    }
+    
+    .welcome-screen h1 {
+      color: #ff78a7;
+      font-size: 3.5rem;
+      text-shadow: 0 0 15px rgba(255, 192, 203, 0.8);
+      margin-bottom: 40px;
+      text-align: center;
+    }
+    
+    .start-button {
+      padding: 15px 40px;
+      font-size: 1.8rem;
+      font-family: 'Dancing Script', cursive;
+      background-color: rgba(255, 120, 167, 0.2);
+      color: #fff;
+      border: 2px solid #ff78a7;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 0 20px rgba(255, 192, 203, 0.5);
+    }
+    
+    .start-button:hover {
+      background-color: rgba(255, 120, 167, 0.4);
+      box-shadow: 0 0 30px rgba(255, 192, 203, 0.8);
+      transform: scale(1.05);
     }
     
     /* Stili per il cuore e le scritte - inizialmente nascoste */
@@ -1158,8 +1204,37 @@
       sound.play();
     }
     
+    // Funzione per attivare/disattivare la musica
+    function toggleMusic() {
+      const backgroundMusic = document.getElementById('background-music');
+      const musicBtn = document.getElementById('music-btn');
+      
+      try {
+        if (backgroundMusic.paused) {
+          // Imposta il volume direttamente
+          backgroundMusic.volume = 0.5;
+          
+          // Tenta di riprodurre l'audio
+          backgroundMusic.play();
+          musicBtn.innerHTML = "♫ Pausa";
+          musicBtn.style.backgroundColor = "rgba(255, 120, 167, 1)";
+        } else {
+          // Metti in pausa l'audio
+          backgroundMusic.pause();
+          musicBtn.innerHTML = "♫ Musica";
+          musicBtn.style.backgroundColor = "rgba(255, 120, 167, 0.9)";
+        }
+      } catch (error) {
+        console.error("Errore nella riproduzione della musica:", error);
+        alert("Clicca nuovamente sul pulsante per attivare la musica. Potrebbe essere necessario interagire più volte con la pagina.");
+      }
+    }
+    
     // Aggiungiamo gli eventi dopo il caricamento del DOM
     document.addEventListener('DOMContentLoaded', function() {
+      // Inizializza la musica di sottofondo
+      const backgroundMusic = document.getElementById('background-music');
+      
       // Aggiungiamo gli eventi ai pulsanti di navigazione
       const prevButtons = document.querySelectorAll('.prev-btn');
       const nextButtons = document.querySelectorAll('.next-btn');
@@ -1196,11 +1271,35 @@
         prevBtn.disabled = index === 0;
         nextBtn.disabled = index === sections.length - 1;
         
+        // Avvia la musica di sottofondo se non è già in riproduzione
+        if (index > 0 && backgroundMusic.paused) {
+          backgroundMusic.volume = 0.5; // Imposta il volume al 50%
+          backgroundMusic.play();
+        }
+        
         // Mostra il heart-container e nascondi il love-letter-container quando si arriva all'ultima sezione
          if (index === sections.length - 1) {
            setTimeout(function() {
              document.getElementById('heart-container').classList.add('show');
              document.querySelector('.love-letter-container').style.display = 'none';
+             
+             // Ferma la musica di sottofondo quando si visualizza heart-container
+             if (backgroundMusic && !backgroundMusic.paused) {
+               // Abbassa gradualmente il volume prima di fermare la musica
+               let volume = backgroundMusic.volume;
+               const fadeAudio = setInterval(function() {
+                 if (volume > 0.05) {
+                   volume -= 0.05;
+                   backgroundMusic.volume = volume;
+                 } else {
+                   clearInterval(fadeAudio);
+                   backgroundMusic.pause();
+                   backgroundMusic.currentTime = 0;
+                   document.getElementById('music-btn').innerHTML = "♫ Musica";
+                   document.getElementById('music-btn').style.backgroundColor = "rgba(255, 120, 167, 0.9)";
+                 }
+               }, 100);
+             }
            }, 10000); // 10 secondi dopo aver raggiunto l'ultima sezione
          }
       }
@@ -1226,6 +1325,11 @@
   </script>
 </head>
 <body>
+  <!-- Schermata di benvenuto -->
+  <div class="welcome-screen" id="welcome-screen">
+    <h1>Feliz 4 Anos Juntos!</h1>
+    <button class="start-button" id="start-button">Apri la lettera ❤️</button>
+  </div>
   <!-- Contenitore per il cuore e le scritte (inizialmente nascosto) -->
   <div class="heart-container" id="heart-container" onclick="openYoutubeVideo()">
     <div id="text-main">feliz 4 anos juntos</div>
@@ -1234,7 +1338,7 @@
     <div id="text-infinity">∞</div>
     <div id="text-date">♥ 23.10.2025 ♥</div>
     <div id="video-container" style="position: fixed; bottom: 0; left: 0; width: 100%; z-index: 30;">
-      <iframe style="width: 100%; height: 551px;" src="https://www.youtube.com/embed/_2S8524bpg4?si=KMGOxn-aWEHW9Pjw" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+      <iframe style="width: 100%; height: 551px;" src="4anos_junto.mp4" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
     </div>
   </div>
   
@@ -1369,12 +1473,29 @@
 
     <!-- Controles de navegación -->
     <div class="letter-controls">
-      <button id="prev-section" class="letter-btn">&lt; Anterior</button>
-      <span id="section-indicator">1/12</span>
-      <button id="next-section" class="letter-btn">Siguiente &gt;</button>
-    </div>
+    <button id="prev-section" class="letter-btn">&lt; Anterior</button>
+    <span id="section-indicator">1/12</span>
+    <button id="next-section" class="letter-btn">Siguiente &gt;</button>
+    <button id="music-btn" class="letter-btn" style="font-size: 1.5rem; background-color: rgba(255, 120, 167, 0.9);" onclick="toggleMusic()">♫ Musica</button>
+  </div>
   </div>
   
   <script src="./script.js"></script>
+  <script>
+    // Script per la schermata di benvenuto
+    document.addEventListener('DOMContentLoaded', function() {
+      const startButton = document.getElementById('start-button');
+      const welcomeScreen = document.getElementById('welcome-screen');
+      const backgroundMusic = document.getElementById('background-music');
+      
+      startButton.addEventListener('click', function() {
+        // Avvia la musica
+        backgroundMusic.play();
+        
+        // Nascondi la schermata di benvenuto
+        welcomeScreen.style.display = 'none';
+      });
+    });
+  </script>
 </body>
 </html>
